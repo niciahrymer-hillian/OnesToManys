@@ -1,0 +1,41 @@
+/* [FILE] index_annotated_cp.css
+   [WHY] Global style primitives and typography baseline.
+   [EFFECT] Gives the app a consistent visual system across components. */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+
+:root {
+  font-family: 'IBM Plex Sans', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #1d2d27;
+  background:
+    radial-gradient(circle at top right, #d4eee5 0, transparent 30%),
+    radial-gradient(circle at bottom left, #f2ead0 0, transparent 35%),
+    #f4f7f3;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+code {
+  background: #eef3ef;
+  border-radius: 6px;
+  padding: 0.05rem 0.35rem;
+}
