@@ -2,7 +2,7 @@
 // [WHY] Shows selectable master entities in the list-detail layout.
 // [EFFECT] User can pick one manufacturer to drive detail/product data loading.
 
-function ManufacturerList({ manufacturers, selectedId, onSelect, isLoading }) {
+function ManufacturerList({ manufacturers, selectedId, onSelect, onApplySearch, isLoading }) {
   // [GUARD] Loading and empty states keep UI clear.
   if (isLoading) {
     return <p className="status-text">Loading manufacturers...</p>
@@ -18,16 +18,39 @@ function ManufacturerList({ manufacturers, selectedId, onSelect, isLoading }) {
         const isSelected = manufacturer.manufacturer_id === selectedId
         return (
           <li key={manufacturer.manufacturer_id}>
-            <button
-              type="button"
-              className={`manufacturer-card${isSelected ? ' is-selected' : ''}`}
-              onClick={() => onSelect(manufacturer.manufacturer_id)}
-            >
-              <span className="manufacturer-name">{manufacturer.name}</span>
+            <div className={`manufacturer-card${isSelected ? ' is-selected' : ''}`}>
+              <button
+                type="button"
+                className="attr-button manufacturer-id"
+                onClick={() => onSelect(manufacturer.manufacturer_id)}
+              >
+                #{manufacturer.manufacturer_id}
+              </button>
+              <button
+                type="button"
+                className="attr-button manufacturer-name"
+                onClick={() => onSelect(manufacturer.manufacturer_id)}
+              >
+                {manufacturer.name}
+              </button>
               <span className="manufacturer-meta">
-                {manufacturer.country} · Founded {manufacturer.founded_year}
+                <button
+                  type="button"
+                  className="attr-button"
+                  onClick={() => onApplySearch(manufacturer.country)}
+                >
+                  {manufacturer.country}
+                </button>
+                {' · Founded '}
+                <button
+                  type="button"
+                  className="attr-button"
+                  onClick={() => onApplySearch(String(manufacturer.founded_year))}
+                >
+                  {manufacturer.founded_year}
+                </button>
               </span>
-            </button>
+            </div>
           </li>
         )
       })}

@@ -4,11 +4,11 @@
   font-family: 'IBM Plex Sans', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #1d2d27;
+  color: #26372f;
   background:
-    radial-gradient(circle at top right, #d4eee5 0, transparent 30%),
-    radial-gradient(circle at bottom left, #f2ead0 0, transparent 35%),
-    #f4f7f3;
+    radial-gradient(circle at 12% 8%, rgba(175, 199, 179, 0.45) 0, transparent 34%),
+    radial-gradient(circle at 86% 82%, rgba(173, 155, 128, 0.34) 0, transparent 38%),
+    linear-gradient(160deg, #eef3eb 0%, #d6ccb8 48%, #e8efe6 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -22,6 +22,7 @@
 body {
   margin: 0;
   min-width: 320px;
+  background: transparent;
 }
 
 h1,
@@ -31,7 +32,7 @@ h3 {
 }
 
 code {
-  background: #eef3ef;
+  background: #e8eee6;
   border-radius: 6px;
   padding: 0.05rem 0.35rem;
 }

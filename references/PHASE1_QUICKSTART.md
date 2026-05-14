@@ -33,6 +33,9 @@ pip install flask flask-sqlalchemy flask-cors pytest
 ### 3. Validate Python Imports
 ```bash
 python -c "import flask, flask_sqlalchemy, flask_cors, pytest; print('backend deps ok')"
+
+---
+
 ```
 
 Expected output:
@@ -46,7 +49,8 @@ Expected output:
 Expected output:
 - `54 passed`
 - Warnings are acceptable (`LegacyAPIWarning` from SQLAlchemy Query.get)
-
+- `* Serving Flask app 'app'`
+- `* Running on http://127.0.0.1:5000`
 Important guardrail:
 - If you see fixture errors from files in `references/`, verify `pytest.ini` includes:
   - `testpaths = tests`
@@ -58,7 +62,6 @@ Important guardrail:
 ```
 
 Expected server log lines:
-- `* Serving Flask app 'app'`
 - `* Debug mode: on`
 - `* Running on http://127.0.0.1:5000`
 
@@ -70,7 +73,32 @@ curl http://127.0.0.1:5000/api/products
 ```
 
 Expected health response:
-- `{"message":"Manufacturer-Products API is running"}`
+- `Serving HTTP on ... port 8080`
+
+### 6b. Run Phase 2 curl Checks
+With the Flask server still running in one terminal:
+
+```bash
+chmod +x scripts/phase2_curl_checks.sh
+./scripts/phase2_curl_checks.sh
+```
+
+What this verifies:
+- nested one-to-many route creation and retrieval
+- JSON export at `/api/export/json`
+- JSON import at `/api/import/json`
+
+Expected last line:
+- `python3 -m http.server 8080 in frontend-vanilla`
+
+If you need to show this as project evidence, keep:
+- the exact command you ran
+- the script output ending in `curl Phase 2 checks passed`
+- any exported `export.json` file you used for the import step
+
+Important note:
+- curl covers the endpoint-testing intent.
+- `Ctrl+C`
 
 ### 7. Stop Server
 In the server terminal, press:
@@ -195,6 +223,23 @@ python3 app.py
  * Running on http://127.0.0.1:5000
 ```
 
+## 4b. Open Complete Site From One URL (Unified Launcher)
+
+From project root, run:
+
+```bash
+cd /Users/nicky/Projects/OnesToManys
+python3 -m http.server 8090
+```
+
+Then open:
+
+- `http://127.0.0.1:8090/frontend-launcher/index.html`
+
+This launcher provides one control URL with embedded views for:
+- React primary app (`5173` or `5174` fallback)
+- Vanilla archive/demo pages (`8080`)
+
 ### Test Health Check
 ```bash
 curl http://localhost:5000/
@@ -251,6 +296,11 @@ Expected response:
 curl http://localhost:5000/api/manufacturers
 ```
 
+#### Get Products For One Manufacturer
+```bash
+curl http://localhost:5000/api/manufacturers/1/products
+```
+
 #### Create Product
 ```bash
 curl -X POST http://localhost:5000/api/products \
@@ -263,6 +313,19 @@ curl -X POST http://localhost:5000/api/products \
     "stock_quantity": 100,
     "description": "Next-gen gaming console"
   }'
+```
+
+#### Export All Data To JSON
+```bash
+curl http://localhost:5000/api/export/json -o export.json
+cat export.json
+```
+
+#### Import Data From JSON
+```bash
+curl -X POST http://localhost:5000/api/import/json \
+  -H "Content-Type: application/json" \
+  --data-binary @export.json
 ```
 
 #### Get All Products
@@ -357,6 +420,32 @@ sqlite3 data.db ".schema manufacturers"
 sqlite3 data.db ".schema products"
 ```
 
+### Verify Seed Relationship Scale (12 manufacturers x 30 products)
+```bash
+# Total manufacturers (expected: 12)
+sqlite3 data.db "SELECT COUNT(*) AS manufacturer_count FROM manufacturers;"
+
+# Total products (expected: 360)
+sqlite3 data.db "SELECT COUNT(*) AS product_count FROM products;"
+
+# Per-manufacturer product counts (expected: 30 each)
+sqlite3 data.db "
+SELECT
+  m.manufacturer_id,
+  m.name,
+  COUNT(p.product_id) AS product_count
+FROM manufacturers m
+LEFT JOIN products p ON p.manufacturer_id = m.manufacturer_id
+GROUP BY m.manufacturer_id, m.name
+ORDER BY m.manufacturer_id;
+"
+```
+
+Expected relationship evidence:
+- manufacturer count = `12`
+- product count = `360`
+- each manufacturer row shows `product_count = 30`
+
 ### Backup Database
 ```bash
 cp data.db data.db.backup
@@ -391,6 +480,25 @@ kill -9 <PID>
 # Or use different port in app.py: app.run(debug=True, port=5001)
 ```
 
+### Issue: React page not reachable on `http://127.0.0.1:5173/`
+**Why it happens:**
+- Vite defaults to port 5173, but if that port is occupied it automatically moves to the next available port (commonly 5174).
+
+**Solution:**
+```bash
+cd /Users/nicky/Projects/OnesToManys/frontend-react
+npm run dev
+```
+
+Then open the exact Local URL printed by Vite, for example:
+- `http://localhost:5174/`
+
+If you specifically want 5173, free it first:
+```bash
+lsof -nP -iTCP:5173 -sTCP:LISTEN
+kill -9 <PID>
+```
+
 ### Issue: Tests fail with "No module named app"
 **Solution:**
 ```bash
@@ -407,6 +515,95 @@ pytest tests/ -v
 # Delete data.db
 rm data.db
 # Restart Flask to recreate fresh database
+```
+
+### Issue: "Missing required fields" when creating product
+**Why it happens:**
+- You are posting to `/api/products` or `/api/manufacturers/{id}/products` with an incomplete JSON body.
+- This is not caused by missing seed data.
+
+**Minimum working flow:**
+```bash
+# 1) Create a manufacturer first
+curl -X POST http://127.0.0.1:5000/api/manufacturers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "TestMaker",
+    "country": "USA",
+    "founded_year": 2000,
+    "headquarters_city": "Austin"
+  }'
+
+# 2) Create product using nested route (no manufacturer_id field required in body)
+curl -X POST http://127.0.0.1:5000/api/manufacturers/1/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product_name": "Widget",
+    "category": "Demo",
+    "price": 19.99,
+    "stock_quantity": 5
+  }'
+```
+
+**If you use `/api/products` instead of nested route:**
+- Include all required fields: `manufacturer_id`, `product_name`, `category`, `price`, `stock_quantity`.
+
+### Issue: terminal shows `quote>` after paste
+**Why it happens:**
+- Your shell saw an opening quote `'` or `"` without a matching closing quote.
+- This usually happens when multiline curl JSON was pasted with a missing trailing `'`.
+
+**How to exit `quote>` mode:**
+- Press `Ctrl+C` to cancel the unfinished command.
+
+**Use one-line commands to avoid this:**
+```bash
+curl -X POST http://127.0.0.1:5000/api/manufacturers -H "Content-Type: application/json" -d '{"name":"TestMaker","country":"USA","founded_year":2000,"headquarters_city":"Austin"}'
+curl -X POST http://127.0.0.1:5000/api/manufacturers/1/products -H "Content-Type: application/json" -d '{"product_name":"Widget","category":"Demo","price":19.99,"stock_quantity":5}'
+```
+
+### Issue: Python file gets accidental pasted corruption (example: `app.py` export block)
+**Why it happens:**
+- A clipboard paste or editor glitch can inject non-Python fragments into a dict/list block.
+- In this project, `_export_payload()` is especially sensitive because one malformed line breaks app startup.
+
+**How to detect quickly:**
+```bash
+cd /Users/nicky/Projects/OnesToManys
+python -m py_compile app.py
+```
+
+If this fails, inspect around:
+- `def _export_payload()`
+- `def _load_payload(payload)`
+
+**Known-good shape in `_export_payload()`:**
+```python
+return {
+  "manufacturers": [
+    {
+      **manufacturer.to_dict(),
+      "products": [
+        product.to_dict()
+        for product in sorted(manufacturer.products, key=lambda item: item.product_id)
+      ],
+    }
+    for manufacturer in manufacturers
+  ]
+}
+```
+
+### Issue: `rg` command not found while searching files
+**Why it happens:**
+- `ripgrep` is not installed or not available on PATH in the current terminal.
+
+**Fallback options:**
+```bash
+# Filename/path discovery
+find . -type f | grep "frontend-vanilla"
+
+# Text search with line numbers
+grep -Rin "manufacturerProductTable" frontend-vanilla
 ```
 
 ### Issue: CORS errors in browser

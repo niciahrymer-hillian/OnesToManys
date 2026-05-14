@@ -28,6 +28,28 @@ tests/
     └── test_products_api.py
 ```
 
+Manual black-box API verification is also available with curl:
+
+```bash
+chmod +x scripts/phase2_curl_checks.sh
+./scripts/phase2_curl_checks.sh
+```
+
+This complements pytest by exercising the running server from outside the Flask test client.
+
+### Using curl As Phase 2 Evidence
+
+If you are using curl instead of a GUI REST client, keep the evidence explicit in your submission notes:
+
+1. Start the Flask server locally.
+2. Run `./scripts/phase2_curl_checks.sh` and save the terminal output.
+3. If needed, include the individual curl commands for nested routes plus `/api/export/json` and `/api/import/json`.
+4. State clearly that curl was used to validate the endpoints from a running server.
+
+Important limitation:
+- This satisfies the API testing intent.
+- It does not satisfy the README's GUI-client wording if that requirement is enforced literally.
+
 ### Execute All Tests
 
 ```bash
@@ -370,6 +392,304 @@ Annotated learning references:
 3. **Phase 2**: Add relationship endpoints (GET /api/manufacturers/{id}/products, etc.)
 4. **Phase 2**: Add import/export (JSON and SQL)
 5. **Phase 3**: Build frontends (Vanilla JS, React)
+
+---
+
+## Phase 3 Manual UI Checklist (Pass/Fail)
+
+Use this checklist when validating the React UI manually against the running backend.
+
+### Setup
+
+1. Start backend server:
+    - `cd /Users/nicky/Projects/OnesToManys`
+    - `source venv/bin/activate`
+    - `python app.py`
+2. Start frontend dev server in a second terminal:
+    - `cd /Users/nicky/Projects/OnesToManys/frontend-react`
+    - `npm run dev`
+3. Open the Vite URL shown in terminal.
+   - Important: if 5173 is occupied, Vite auto-switches ports (for example to 5174). Use the exact `Local` URL printed by Vite.
+   - Example fallback URL: `http://localhost:5174/`
+
+### Manufacturer CRUD
+
+1. **Create manufacturer**
+    - Fill Add Manufacturer form in list panel.
+    - Click Add Manufacturer.
+    - Pass criteria: New manufacturer appears in list and can be selected.
+
+2. **Read manufacturer details**
+    - Select the newly created manufacturer.
+    - Pass criteria: Detail panel shows name, location, founded year, and status.
+
+3. **Update manufacturer**
+    - In Edit Manufacturer section, change one or more fields.
+    - Click Save Manufacturer.
+    - Pass criteria: Updated values remain after reselecting the manufacturer.
+
+4. **Delete manufacturer**
+    - Click Delete Manufacturer and confirm.
+    - Pass criteria: Manufacturer disappears from list.
+
+### Product CRUD (Nested Under Selected Manufacturer)
+
+1. **Create product**
+    - Select a manufacturer.
+    - Fill product form and click Add Product.
+    - Pass criteria: Product appears in product table for that manufacturer.
+
+2. **Read product list**
+    - Stay on selected manufacturer.
+    - Pass criteria: Product table shows product name, category, price, and stock.
+
+3. **Update product**
+    - Click Edit on a product row.
+    - Change one or more fields and click Update Product.
+    - Pass criteria: Product row reflects new values.
+
+4. **Delete product**
+    - Click Delete on a product row.
+    - Pass criteria: Product row is removed from table.
+
+### Relationship Integrity
+
+1. Create one manufacturer with two products.
+2. Select a different manufacturer.
+3. Pass criteria: Product table changes by selected manufacturer scope only.
+
+### Optional API Cross-Check
+
+After UI actions, confirm backend state:
+
+- `curl http://127.0.0.1:5000/api/manufacturers`
+- `curl http://127.0.0.1:5000/api/products`
+- `curl http://127.0.0.1:5000/api/manufacturers/<manufacturer_id>/products`
+
+Pass criteria: API output matches what UI shows.
+
+---
+
+## Phase 3 Vanilla UI Manual Run (Pancake Menu)
+
+Use this when validating the Vanilla JavaScript implementation.
+
+### Start Servers
+
+1. Backend API:
+    - `cd /Users/nicky/Projects/OnesToManys`
+    - `source venv/bin/activate`
+    - `python app.py`
+2. Static server for Vanilla frontend (new terminal):
+    - `cd /Users/nicky/Projects/OnesToManys/frontend-vanilla`
+    - `python3 -m http.server 8080`
+3. Open:
+    - `http://127.0.0.1:8080/index.html`
+
+### Pancake Menu Navigation Check
+
+1. Click the pancake menu button (`≡`) on Home.
+2. Navigate to Manufacturers page.
+3. Open menu again and navigate to Products page.
+4. Repeat from Products back to Home.
+
+Pass criteria:
+- Menu opens/closes on every page.
+- All pages are reachable from the menu.
+- Active page link is highlighted.
+
+### Vanilla CRUD + Search Check
+
+1. On Manufacturers page:
+    - Create manufacturer.
+    - Search list by name/country/city.
+    - Edit and delete selected manufacturer.
+2. On Products page:
+    - Select manufacturer context.
+    - Create, edit, and delete products.
+    - Search products by name/category/description.
+
+Pass criteria:
+- UI actions reflect immediately in lists/tables.
+- Errors are shown inline for invalid operations.
+- Product actions remain scoped to selected manufacturer.
+
+---
+
+## Frontend Merge Timing (React + Vanilla)
+
+Recommended point to merge:
+- After both frontends pass one manual checklist run (React checklist and Vanilla checklist) on the same backend.
+
+Why this point:
+- It locks functional parity first, so merge work is structural and lower risk.
+
+Prerequisites before merge:
+1. React build passes (`npm run build` in `frontend-react`).
+2. Vanilla scripts pass syntax checks.
+3. Manual CRUD + search checks pass in both UIs.
+
+Suggested merge sequence:
+1. Create a single launcher page that links to both UIs (soft merge).
+2. Decide target long-term UI (`React` or `Vanilla`) as canonical.
+3. Port any missing behavior from non-canonical UI to canonical UI.
+4. Keep one UI as archive/demo or retire it after parity confirmation.
+
+Notes:
+- There is no automatic merge of the two frontends.
+- They already share one backend API, which is the stable integration point.
+
+### Soft-Merge Launcher (Implemented)
+
+Launcher file:
+- `/Users/nicky/Projects/OnesToManys/frontend-launcher/index.html`
+
+How to run launcher:
+1. Start backend API (`python app.py`).
+2. Start React dev server (`npm run dev` in `frontend-react`).
+3. Start Vanilla static server (`python3 -m http.server 8080` in `frontend-vanilla`).
+4. Serve launcher page from project root:
+    - `cd /Users/nicky/Projects/OnesToManys`
+    - `python3 -m http.server 8090`
+5. Open `http://127.0.0.1:8090/frontend-launcher/index.html`.
+
+Pass criteria:
+- Launcher opens.
+- React link opens React UI.
+- Vanilla links open the corresponding Vanilla pages.
+
+---
+
+## React-Canonical Consolidation Plan
+
+This plan follows the selected strategy:
+- Short-term: keep soft-merge launcher while validating both UIs.
+- Medium-term: make React the canonical frontend.
+- Long-term: keep Vanilla as archived learning/demo reference.
+
+### Phase A: Finish Validation (Now)
+
+1. Run one full React manual checklist pass.
+2. Run one full Vanilla manual checklist pass.
+3. Record any parity gaps between React and Vanilla behavior.
+
+Exit criteria:
+- Both UIs pass CRUD + search checks against same backend state.
+- Any remaining gap is documented and prioritized.
+
+### Phase B: Lock React As Canonical
+
+1. Treat `frontend-react/` as the only actively developed UI.
+2. Route all future feature requests and bug fixes to React first.
+3. Keep launcher page, but mark React as primary path.
+
+Exit criteria:
+- New work is implemented only in React.
+- Team notes/docs call out React as canonical.
+
+### Phase C: Archive Vanilla (No Active Development)
+
+1. Freeze `frontend-vanilla/` as read-only reference/demo.
+2. Keep it runnable for demos with static server commands.
+3. Stop parity updates unless explicitly required by assignment/demo.
+
+Exit criteria:
+- Vanilla remains functional for demo use.
+- No new features are required to be backported.
+
+### Phase D: Optional Final Merge Cleanup
+
+1. Keep launcher as unified entry (recommended for demos).
+2. Optionally add archive notice banner in Vanilla pages.
+3. Optionally add a single README section for launch commands.
+
+Exit criteria:
+- Single starting point exists for all stakeholders.
+- Canonical path and archive path are unambiguous.
+
+---
+
+## Definition Of Done (Final Merge State)
+
+The consolidation is considered complete when all items below are true:
+
+1. React is the canonical UI and receives all ongoing changes.
+2. Vanilla is explicitly marked archive/demo-only.
+3. Launcher page is available and links to both modes.
+4. Backend API compatibility is verified with React flows.
+5. Manual test checklist passes for React.
+6. Reference docs reflect the canonical/archive split.
+7. Annotated references are up to date for changed files.
+
+Optional but recommended:
+- Add a dated "Consolidation Decision" note in references for traceability.
+
+---
+
+## Consolidation Decision Record
+
+Date: 2026-05-13
+
+Decision:
+- React is the canonical frontend for active development.
+- Vanilla JS is retained as archive/demo and learning reference.
+- Soft-merge launcher remains the single entry page to both modes.
+
+Rationale:
+1. React provides stronger maintainability for ongoing feature growth.
+2. Vanilla remains valuable as instructional/reference material without doubling active feature work.
+3. Launcher preserves usability for demos and transition periods.
+
+Impact:
+1. New frontend features and fixes are implemented in React first.
+2. Vanilla updates are limited to archive health/demo needs.
+3. Documentation and test checklists reflect canonical/archive split.
+
+Review trigger:
+- Revisit this decision only if assignment requirements or team constraints explicitly require dual active frontends.
+
+---
+
+## Final Review Snapshot (2026-05-13)
+
+Validation summary:
+1. Backend tests: 57 passed.
+2. React frontend build: passed.
+3. Vanilla script syntax checks: passed.
+
+Quick API demo executed:
+1. Created manufacturer (`DemoMfg`) via `POST /api/manufacturers`.
+2. Created nested product (`DemoWidget`) via `POST /api/manufacturers/1/products`.
+3. Verified one-to-many list via `GET /api/manufacturers/1/products`.
+4. Exported JSON via `GET /api/export/json`.
+5. Re-imported JSON via `POST /api/import/json`.
+
+Observed result:
+- Demo endpoints returned expected payloads and status behavior during run.
+- Repaired accidental corruption in `app.py` inside `_export_payload()` and verified syntax with `python -m py_compile app.py`.
+
+### Post-Edit Safety Check Learned During Implementation
+
+When editing backend import/export logic in `app.py`, run a syntax guard before restarting servers:
+
+```bash
+cd /Users/nicky/Projects/OnesToManys
+python -m py_compile app.py
+```
+
+Why this is now required in practice:
+1. `_export_payload()` and `_load_payload()` are dense nested structures.
+2. A single accidental pasted fragment can invalidate the file.
+3. `py_compile` catches this immediately without waiting for runtime route calls.
+
+Optional follow-up smoke checks after compile passes:
+
+```bash
+curl http://127.0.0.1:5000/api/export/json
+curl -X POST http://127.0.0.1:5000/api/import/json \
+    -H "Content-Type: application/json" \
+    --data-binary @export.json
+```
 
 ---
 

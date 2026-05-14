@@ -28,6 +28,10 @@ CREATE TABLE products (
     category TEXT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     stock_quantity INTEGER NOT NULL DEFAULT 0,
+    units_sold INTEGER NOT NULL DEFAULT 0,
+    revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+    order_origin TEXT NOT NULL DEFAULT 'Online',
+    sales_channel TEXT NOT NULL DEFAULT 'Direct',
     description TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -37,6 +41,8 @@ CREATE TABLE products (
         ON UPDATE CASCADE,
     CHECK (price >= 0),
     CHECK (stock_quantity >= 0),
+    CHECK (units_sold >= 0),
+    CHECK (revenue >= 0),
     UNIQUE (manufacturer_id, product_name)
 );
 

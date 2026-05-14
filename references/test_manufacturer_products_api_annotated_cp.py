@@ -7,6 +7,10 @@ Integration tests for nested manufacturer-product endpoints validate one-to-many
 These tests prove products can be managed inside manufacturer context without losing relationship integrity.
 """
 
+# [IMPORT] Direct DB access is used only to create a controlled round-trip import test state.
+from app import db
+from models import Manufacturer, Product
+
 
 # [CLASS] Test GET /api/manufacturers/{id}/products.
 class TestManufacturerProductsListEndpoint:
@@ -230,3 +234,66 @@ class TestManufacturerProductScopedEndpoints:
             f"/api/manufacturers/{sample_manufacturer.manufacturer_id}/products/{sample_product.product_id}"
         )
         assert get_response.status_code == 404
+
+
+# [CLASS] Test JSON export/import endpoints.
+class TestJsonImportExportEndpoints:
+    """[WHY] Verify the API can dump and restore the one-to-many graph.
+    """
+
+    def test_should_export_manufacturers_with_nested_products(
+        self, client, sample_product, sample_manufacturer
+    ):
+        """
+        [ARRANGE] Existing manufacturer with one product.
+        [ACT] GET /api/export/json.
+        [ASSERT] Returns nested JSON ready to be saved to disk.
+        """
+        response = client.get("/api/export/json")
+
+        assert response.status_code == 200
+        assert response.json["manufacturers"][0]["manufacturer_id"] == sample_manufacturer.manufacturer_id
+        assert response.json["manufacturers"][0]["products"][0]["product_id"] == sample_product.product_id
+
+    def test_should_import_exported_json_and_restore_database(
+        self, client, sample_product, sample_manufacturer
+    ):
+        """
+        [ARRANGE] Existing database state is exported, then cleared.
+        [ACT] POST the same JSON to /api/import/json.
+        [ASSERT] Import recreates manufacturers and products from the payload.
+        """
+        export_response = client.get("/api/export/json")
+        payload = export_response.get_json()
+
+        with client.application.app_context():
+            Product.query.delete()
+            Manufacturer.query.delete()
+            db.session.commit()
+
+        import_response = client.post("/api/import/json", json=payload)
+
+        assert import_response.status_code == 201
+        assert import_response.json["manufacturer_count"] == 1
+        assert import_response.json["product_count"] == 1
+
+        manufacturers_response = client.get("/api/manufacturers")
+        products_response = client.get("/api/products")
+
+        assert manufacturers_response.status_code == 200
+        assert products_response.status_code == 200
+        assert len(manufacturers_response.json) == 1
+        assert len(products_response.json) == 1
+        assert manufacturers_response.json[0]["name"] == sample_manufacturer.name
+        assert products_response.json[0]["product_name"] == sample_product.product_name
+
+    def test_should_return_400_when_import_payload_is_not_expected_shape(self, client):
+        """
+        [ARRANGE] Invalid JSON body that lacks manufacturers list.
+        [ACT] POST /api/import/json.
+        [ASSERT] Returns 400.
+        """
+        response = client.post("/api/import/json", json={"items": []})
+
+        assert response.status_code == 400
+        assert "manufacturers list" in response.json["error"]

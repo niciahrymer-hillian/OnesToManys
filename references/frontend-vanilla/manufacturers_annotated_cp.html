@@ -1,0 +1,86 @@
+<!-- [FILE] manufacturers_annotated_cp.html -->
+<!-- [WHY] Vanilla manufacturer CRUD page with searchable master list. -->
+<!-- [EFFECT] Users can create, select, update, and delete manufacturers from one page. -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manufacturers | Vanilla UI</title>
+    <link rel="stylesheet" href="../../frontend-vanilla/assets/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <button id="menuToggle" class="menu-toggle" aria-label="Open menu">≡</button>
+      <h1>Manufacturers</h1>
+      <span class="mode-badge">Mode: Vanilla JS</span>
+    </header>
+
+    <p class="archive-banner">Archive / Demo Mode: React is the canonical frontend for active development.</p>
+
+    <nav id="pancakeMenu" class="pancake-menu" aria-label="Main navigation">
+      <a href="../../frontend-vanilla/index.html" data-page="home">Home</a>
+      <a href="../../frontend-vanilla/manufacturers.html" data-page="manufacturers">Manufacturers</a>
+      <a href="../../frontend-vanilla/products.html" data-page="products">Products</a>
+      <a href="../../frontend-launcher/index.html" data-page="launcher">Unified Launcher</a>
+      <a href="http://127.0.0.1:5173" data-page="react" target="_blank" rel="noreferrer">React Primary</a>
+    </nav>
+
+    <main class="layout grid-2">
+      <section class="panel">
+        <div class="page-links" aria-label="Quick navigation">
+          <a class="quick-link" href="../../frontend-vanilla/index.html">Home</a>
+          <a class="quick-link" href="../../frontend-vanilla/products.html">Products</a>
+          <a class="quick-link" href="../../frontend-launcher/index.html">Unified Launcher</a>
+        </div>
+        <h2>Create Manufacturer</h2>
+        <form id="createManufacturerForm" class="form-grid">
+          <label>Name<input name="name" required /></label>
+          <label>Country<input name="country" required /></label>
+          <label>Founded Year<input name="founded_year" type="number" required /></label>
+          <label>Headquarters City<input name="headquarters_city" required /></label>
+          <button type="submit">Add Manufacturer</button>
+        </form>
+        <p id="createError" class="error"></p>
+
+        <label>
+          Search
+          <input id="manufacturerSearch" class="search-input" placeholder="Search by name, country, city" />
+        </label>
+
+        <div id="manufacturerList" class="stack"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Edit Selected Manufacturer</h2>
+        <p class="notice" id="selectedHint">Select a manufacturer from the list.</p>
+        <form id="editManufacturerForm" class="form-grid">
+          <label>Name<input name="name" required /></label>
+          <label>Country<input name="country" required /></label>
+          <label>Founded Year<input name="founded_year" type="number" required /></label>
+          <label>Headquarters City<input name="headquarters_city" required /></label>
+          <label>
+            Active
+            <select name="is_active">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="submit">Save Changes</button>
+            <button type="button" id="deleteManufacturerBtn" class="danger">Delete</button>
+          </div>
+        </form>
+        <p id="editError" class="error"></p>
+
+        <h3 style="margin-top: 1rem;">Products For Selected Manufacturer</h3>
+        <p class="table-note">Click a product ID/name/category to open the related product view.</p>
+        <div class="table" id="manufacturerProductTable"></div>
+      </section>
+    </main>
+
+    <script src="../../frontend-vanilla/scripts/api.js"></script>
+    <script src="../../frontend-vanilla/scripts/nav.js"></script>
+    <script src="../../frontend-vanilla/scripts/manufacturers.js"></script>
+  </body>
+</html>

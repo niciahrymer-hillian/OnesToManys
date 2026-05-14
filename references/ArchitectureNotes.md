@@ -1,3 +1,95 @@
+# Project Roadmap: How We Got Here
+
+## 1. Project Setup
+
+- **Clone the repo:**
+  ```sh
+  git clone <repo-url>
+  cd OnesToManys
+  ```
+- **Create Python virtual environment:**
+  ```sh
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+  ```
+- **Install frontend dependencies:**
+  ```sh
+  cd frontend-react
+  npm install
+  ```
+
+## 2. Database Initialization & Seeding
+
+- **Create the SQLite DB and apply schema:**
+  ```sh
+  sqlite3 instance/data.db < schema.sql
+  ```
+- **Seed with synthetic data:**
+  ```sh
+  sqlite3 instance/data.db < seed_data.sql
+  ```
+
+## 3. Running the Backend (Flask API)
+
+- **Start the API (HTTP or HTTPS auto-detect):**
+  ```sh
+  source venv/bin/activate
+  python app.py
+  ```
+- **If HTTPS is desired:**
+  - Place certs in `certs/localhost.pem` and `certs/localhost-key.pem` (see HTTPS-SETUP.md for mkcert/openssl instructions).
+  - The server will auto-detect and run with SSL if present.
+
+## 4. Running the Frontend (React)
+
+- **Start the dev server:**
+  ```sh
+  cd frontend-react
+  npm run dev
+  ```
+- **If HTTPS is desired:**
+  - Use `npm run dev -- --https` or configure Vite for HTTPS (see HTTPS-SETUP.md).
+
+## 5. Key Features & Rationale
+
+- **One-to-many (master-detail) modeling:**
+  - Manufacturers (master) and Products (detail) with enforced foreign key.
+- **Analytics:**
+  - Bar charts, pie charts, and overlap/category coverage visualizations for sales and product types.
+- **Pagination:**
+  - Manufacturer list paginated for usability.
+- **Protocol-aware API:**
+  - Frontend auto-detects HTTP/HTTPS for API calls.
+- **Seed data:**
+  - High-variance, deterministic SQL for realistic analytics.
+- **Reference files:**
+  - All major files have annotated copies in `references/` for learning.
+
+## 6. Testing & Validation
+
+- **API health check:**
+  ```sh
+  curl http://127.0.0.1:5000/
+  ```
+- **Pytest for backend:**
+  ```sh
+  pytest
+  ```
+- **Manual UI validation:**
+  - Use the React UI to navigate, CRUD, and view analytics.
+
+## 7. Troubleshooting
+
+- **Port conflicts:**
+  - Kill stale servers: `lsof -i :5000` and `kill <pid>`
+- **DB not updating:**
+  - Reseed: `sqlite3 instance/data.db < seed_data.sql`
+- **HTTPS errors:**
+  - See HTTPS-SETUP.md for cert generation and browser trust steps.
+
+---
+This roadmap summarizes all major steps, commands, and rationale for the current architecture. For annotated code, see the `references/` folder.
 # The Power of ListOf and DetailOf Views in Master-Detail Architecture
 
 ## Understanding ListOf and DetailOf Views
